@@ -1,0 +1,278 @@
+
+数据库：
+	数据存储的仓库。库中存放表。表中存放数据。
+
+	表：	行： 记录、实体。
+
+		列： 域、字段。
+
+数据库发展：
+
+	1. 萌芽阶段——文件存储
+
+	2. 第一代： 层次模型、网状模型。
+
+	3. 第二代： 关系型数据库：		Oracle、MySQL、SQLserver、DB2。。。
+
+		  非关系型数据库：		redis、MongoDB
+
+MySQL安装：
+
+	安装 aptitude：		sudo apt-get install aptitude
+
+	测试MySQL是否安装：	sudo aptitude show mysql-server	—— 未安装
+
+	安装 MySQL：		sudo apt-get/aptitude  install  mysql-server	—— 指定 root 用户密码： 123456
+
+	测试MySQL是否安装：	sudo aptitude show mysql-server	—— 已安装
+
+				mysql -V
+
+	MySQL数据库的配置：	/etc/mysql/mysql.conf.d/mysqld.cnf  	配置文件
+
+	MySQL数据库及对应表：	/var/lib/mysql/			库文件及表数据。
+
+启动MySQL数据库服务器：
+
+	MySQL数据库要想使用！必须先启动 MySQL 服务器！！
+
+	启动MySQL服务器方法：
+
+		1. sudo /etc/init.d/mysql   start		不同Linux 存储目录有可能有差异。
+
+		2. sudo service mysql  start		不同Linux 启动服务都是用 service	
+
+	关闭、重启服务：
+
+		1. sudo /etc/init.d/mysql   stop/restart		不同Linux 存储目录有可能有差异。
+
+		2. sudo service mysql stop/restart		不同Linux 启动服务都是用 service
+
+		数据库服务配置文件：/etc/mysql/mysql.conf.d/mysqld.cnf  一旦被修改。数据库服务器必须重启。否则修改不生效。
+
+	确认启动成功：
+
+		1. service mysql status  ——> 绿灯 ： 启动成功。
+
+		2. netstat -apn | grep mysql  ——> mysqld(守护进程) :  启动成功。 —— LINSTENNING
+
+登录MySQL数据库：
+
+	语法： mysql -h IP地址 -P端口号 -u用户名 -p密码。
+
+		-h：如果是 127.0.0.1 可以省略不写。
+
+		-P：是默认的 3306  可以省略不写。
+
+		-p:  1) 直接跟密码——明文显示
+
+		      2）回车 —— 隐藏密码显示。
+
+	退出MySQL：
+
+		quit、exit、\q
+SQL：
+	数据库的 curd： 
+
+		查询：  	show databases;   查看当前mysql下有哪些数据库。
+
+		  	show create database  数据库名;  查看创建数据库时所使用的 SQL语句。  能看到数据库使用的 字符集（字符编码）
+
+		创建：
+			语法： create  database [if not exists]  `数据库名` [charset=字符集]；
+
+			create  database if not exists  `mydb1` charset=utf8；	// 数据库不存在，就创建。反复执行，不会报错。 
+
+			create  database  `mydb1` charset=utf8；		// 不判断，直接创建。如果数据库存在，报错。
+
+			create  database mydb2 ；	
+
+			反引号： 在名字中没有特殊字符、关键字时，可以省略。
+
+			字符集： 默认latin1
+
+				中文：GBK、GB2312、utf8	
+		删除：
+			语法：drop database [if exists] `数据库名`		
+
+			drop database if exists `mydb2`;		// 反复执行，不会报错
+
+			drop database mydb2;			// 如果没有 mydb2. 会报错。
+
+		修改：
+			只能修改字符集。
+
+			语法： alter database `数据库名`  charset=新字符集
+
+			alter database mydb1 charset=GBK
+
+	表的curd：
+			use  数据库名	选择数据库【务必不能略过】
+		查询：	
+			show tables;  	查询数据库中的表。
+			
+			show  create table 表名；	查询创建表的语法 。
+
+			show create table t1\G	垂直显示表信息。
+
+			desc 表名；		查看表结构。
+
+		创建：
+
+			语法：	create table [if not exists] `表名`(
+				字段名1  数据类型 [auto_increment][primary key][not null][comment][default]，
+				字段名2  数据类型，
+				。。。
+				)engine=innodb charset=表的字符集；
+		
+			创建复杂表：
+
+create table if not exists `teacher`(
+id int(9) auto_increment primary key comment '主键',
+name varchar(10) not null comment '姓名',
+phone varchar(20) comment '电话',
+`add` varchar(20) default '地址不详' comment '家庭住址'
+)engine=innodb charset=GBK;
+			创建简单表：
+	
+				create table 表名(字段名 数据类型， 字段名 数据类型，。。。)；
+
+				create table tb1(id int, name varchar(20));
+
+			在A数据中向B数据库创建表：
+
+				create table 数据库名.表名(字段名 数据类型， 字段名 数据类型，。。。)；
+
+		删除：
+			drop table [if exists] [数据库名.]`表名`
+
+		修改：
+			
+		        增加一个字段：
+
+			语法： alter table  表名 add[column]  字段名  数据类型 [位置];		
+
+			 	alter table tb1 add column  age int(10) fisrt;
+				
+				alter table tb1 add  sex char(2) after id;		
+		       删除一个字段：
+				
+			语法： alter table  表名 drop[column]  字段名 ;
+
+				alter table tb1 drop sex；
+
+		       修改一个字段：改名、改类型
+
+			语法： alter table  表名 change[column]  旧字段名  新字段名  新数据类型;	
+
+				alter table tb1 change column name FullName char(20);
+
+		       修改一个字段：只改类型
+
+			语法： alter table  表名 modify[column]  字段名  新数据类型;
+
+				alter table tb1 modify column name varchar(8);
+		       只修改表名：
+
+			语法一： rename table 旧表名 to 新表名；
+
+			语法二： alter table 旧表名 rename to 新表名；
+
+		       修改引擎：
+
+			语法： alter table 表名 engine=新引擎名
+
+				alter table tb3 engine=myisam
+
+		复制表：
+	
+			只复制数据，不复制表属性。
+	
+				语法：create  table 新表名 select 字段名 from 表名。
+
+			复制表属性，不携带数据。
+
+				语法 create table 新表名 like 表名。
+
+			向一个有相同属性的表，一次插入另一张表的多条数据。
+
+				insert into 新表 select * from 旧表。
+
+	表数据的curd：
+
+		插入： insert into 
+
+			语法：insert into 表名（字段1，字段2.。。。） values（值1， 值2 。。。）
+
+			1. 全插入：
+	
+				insert into 表名（字段1，字段2.。。。） values（值1， 值2 。。。）
+
+				insert into 表名 values（值1， 值2 。。。）
+
+			2. 部分插入：
+				insert into 表名（字段1， 字段5，字段2） values（值1， 值5， 值2)
+
+			隐式插入空值：
+				对于允许为空的字段，在插入一条记录中，没有指定该字段值。默认写入null
+
+			显示插入空值：
+
+				在插入一条记录中，指定给某一个字段的值为 null。
+
+			auto_increment: 列，插入null ，会履行自动增长属性，自动添加数据。
+
+			default：对于有default 属性的列，显示、隐式插入空值。显示默认值。
+
+			3. 一次插入多条：
+				
+				语法： insert into 表名 values（值1， 值2， 值3....), （值1， 值2， 值3....), （值1， 值2， 值3....), 。。。
+
+		更新： update set
+
+			语法： update 表名 set 字段名=值，字段名=值。。。[ where 条件 ]
+
+			没有添加where，设置整张表。
+
+			upate  tb1 set addr=‘北京’, age=100 where name='李清照';
+	
+			update tb1 set age=14 where id=1 or id=3 or id=5;
+
+		删除：delete from 
+
+			语法：delete from 表名 [ where 条件 ]
+
+			delete： 清空表数据。对于自动增长列，新插入数据依次排序使用。
+
+				表空间不会释放。
+
+			truncate： 清空表（将表摧毁重建）。对于自动增长列，重新计数。
+
+				释放表空间。
+
+		查询：select from
+	
+			语法： select 字段名，字段名，。。。 from 表名  [ where 条件 ]
+
+			select * from tb1；
+
+			select id, age, name from tb1;
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+		

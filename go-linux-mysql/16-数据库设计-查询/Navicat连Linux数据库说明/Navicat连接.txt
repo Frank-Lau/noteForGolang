@@ -1,0 +1,27 @@
+
+前提： 保证 windows 和 Linux 环境能相互 ping 通。
+
+Navicat 连接：
+
+        ①. Navicat 连接不上。报错： Can’t connect to MySQL server on  (10061 ) （Navicat连接错误1.jpg）
+
+	解决方法： 
+		1. 修改 /etc/mysql/mysql.conf.d/mysqld.cnf 文件下 【43行】： bind-address        = 127.0.0.1 ---> bind-address        = 0.0.0.0
+
+		2. 保存、退出、重启MySQL服务器。
+
+        ②【结果】: 修改完！错误变了：
+	
+	Host '192.168.6.17' （windows IP）is not  allowed to connect to this MySQL server。（Navicat连接错误2.jpg）
+
+	解决方法：	
+		1. 使用Linux下文字界面登录数据库： mysql -uroot -p123456
+		
+		2. 选择使用 mysql 数据库：mysql> use mysql
+
+		3. 执行 mysql> update user set host = '%' where user = 'root';（Navicat连接错误2-解决1.jpg）
+
+		4. 刷新MySQL的权限相关表：FLUSH PRIVILEGES;（Navicat连接错误2-解决2.jpg）
+
+		5. 无需重启MySQL数据库，直接重连 Navicat 即可。
+	

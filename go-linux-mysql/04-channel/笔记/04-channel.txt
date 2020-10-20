@@ -1,0 +1,223 @@
+
+channel ：
+	是一种数据类型。 type Person struct、int、bool、string。。。
+
+	管道。双向半双工通信。内部数据只能一次读取(底层通过队列实现)
+
+	实现go程同步： 
+
+		A go程向channel 写数据，如果，B go程没有使用读端读数据。  A 阻塞。
+
+		A go程从channel 读数据，如果，B go程没有使用写端写数据。  A 阻塞。
+
+	创建channel：
+
+		ch := make(关键字chan  在channel中流动的数据的类型， 初始容量)
+
+		例：ch1 := make(chan int, 0)	创建一个用户通信 int 数据的 channel 初始容量为 0 （无缓冲channel）
+
+		      ch2 := make(chan string)   创建一个用户通信 string 数据的 channel 初始容量为 0 （无缓冲channel）
+
+	channel通信：
+
+		读channel：
+
+			<- ch1  将ch1中的数据 读出。 丢弃
+
+			num := <-ch1 将ch1中的数据 读出。存储至 num变量中
+
+		写channel：
+
+			ch1 <- num	将num中的数据 ，写入到 ch1 中。
+
+		注意事项：
+			1. 必须有一个读端，一个写端。只有一端 —— 报错（ deadlock！）	
+
+			2. 读、写两端，对应的应是 不同的 go程。不允许一个channel 在一个go程中，自己读、自己写。
+
+系统默认打开、关闭文件：
+
+	stdin 标准输入文件 —— 标准输入缓冲区 —— 0 —— 键盘
+
+	stdout 标准输出文件 —— 标准输出缓冲区 —— 1 —— 屏幕
+
+	stderr 标准错误文件 —— 标准错误缓冲区 —— 2 —— 屏幕。
+
+	三个文件，是由操作系统在程序执行之初，自动打开。 程序运行结束。自动关闭。
+
+
+无缓冲channel：
+
+	channel的 容量值为  0 。 无法在channel中进行数据存储。
+
+	len（channel）： 缓冲区剩余数据个数。 无缓冲channel 的len始终为 0
+
+	cap（channle）：缓冲区的大小。 无缓冲channel 始终为 0
+
+有缓冲channel：
+
+	ch :=make(chan int, 5) 创建一个容量值为 5 的 channel
+
+	channel的 容量值为 非0 。 可以在channel中进行数据存储。
+
+	当写端写数据， 无读端时，数据会自动写入 channel 缓冲区中存储。   当缓冲区被写满，依然没有读端时，才阻塞。
+
+	读端读channel ，直接从channel的缓冲区中取数据，如果缓冲区中所有数据都被读走，为空，才阻塞。
+
+	len（channel）： 缓冲区剩余数据个数。 有缓冲channel 的len随着channel 的读写变化。
+
+	cap（channle）：缓冲区的大小。 有缓冲channel cap值，始终为 初始值。不支持自动扩容。
+
+同步通信：【重点】
+
+	无缓冲channel 。 数据传递双方必须同时在线，完成当前一次传递，才能进行下一次。
+
+	类比生活中，打电话。
+
+异步通信：【重点】
+
+	有缓冲channel。 写端无论读端是否在线。直接写出数据，立即返回，进行后续写入。 数据传递双方不需要同时在线。
+
+	类比生活中，发短信。
+
+关闭channel：
+
+	语法： 类似 判断map的key是否存在。
+
+	ch := make(chan int)
+
+	if data, ok := <-ch;	ok == true {
+
+		1. 能从ch中读到数据，数据保存在data变量中。 ok 返回 true
+
+		2. 不能从ch中读到数据：
+
+			1）写端有go程把持，没有写数据。 当前go程阻塞。 阻塞在 <-ch
+
+			2)  写端调用了 close() 函数。 ok 返回 false。 data取 对应数据类型的默认值。int 0    string “” bool false    byte 0
+
+	1. 对于已经关闭的 channel 写操作。 报错。 panic: send on closed channel
+
+	2. 对于已经关闭的 channel 读操作。 读到 数据类型默认值。
+
+
+	使用 range 判断ch中是否有数据可读：【重点】
+
+		for  data := range ch {	注意： ch 不能写成 <-ch 
+			
+		}
+
+		ch上有数据可读。 保存在 data中。  无数据：   1） 对端没关闭。阻塞等待。 2） 对端close。 结束range 
+单向channel：
+
+	双向channel：  
+
+		ch := make(chan int)  
+
+	单向channel：
+
+		数据只能 在该channel中 读 或者 写。
+
+		var ch1 chan<- 	单向 “写”channel
+
+		var ch2 <-chan 	单向 “读”channel
+
+	特性：
+		1. 双向channel可以给任意单向channel赋值。
+
+		2. 单向写channel ， 只用于写数据。不能读取。 receive from send-only type chan<- int
+
+		3. 单向读channel ， 只用于读数据，不能写。 send to receive-only type <-chan int
+
+	应用于函数调用传参。
+
+
+单向 channel 应用： —— 【生产者、消费者模型】----- 【【重点】】
+
+	包含：生产者、消费者、缓存区 3 个模块。
+
+	缓存区 存在意义：
+
+		1. 解耦 ：生产者和消费者之间 降低耦合度。  任意一方修改，不会直接影响对端。	
+
+		·：借助异步通信机制，在生产者、消费者等多个 go程间实现并行通信。
+		
+		3. 缓存：借助缓冲区，缓存数据，从而提高生产者、消费者效率。
+
+	channel 做函数参数时，传引用。
+
+	map 做函数参数时，传引用。
+
+	slice 做函数参数时，传值。 type Slice struct { *Pointer, len, cap }
+
+	练习：订单处理
+
+定时器：
+	单次定时： Timer
+
+		1. 创建Timer对象（包含 C 成员 channel类型）
+
+			myTimer := time.NewTimer(定时时长)
+
+		2. 读 Timer对象中的 C。 
+
+			定时时长到达后， 系统自动向C中写当前时间。在此之前，读C一直阻塞。
+
+	【重点】简单单次定时： 综合上述两步。
+
+		time.After(定时时长)  返回  Timer对象的C成员变量。【重点】
+
+		例： data := <-time.After(time.Second * 3)
+
+	关闭、重置定时器：
+
+		stop()	关闭 myTimer 的 C
+
+		reset() 	重新设置定时器定时时长。
+
+	周期定时：Ticker    只能使用stop()  不能使用reset()重置
+
+		1. 创建Ticker对象（包含 C 成员 channel类型）
+
+			myTicker := time.NewTicker(定时时长)
+
+		2. 读 Timer对象中的 C。 
+
+			定时时长到达后， 系统自动向C中写当前时间。在此之前，读C一直阻塞。
+
+			系统每隔 定时时长 会自动 循环向 C中写当前时间
+
+		3.break,return,Goexit,os.Exit区别
+
+			break 退出for,当处于select 或者swith中的case时 跳出case分支
+			
+			return 退出当前函数调用
+
+			runtime.Goexit退出当前go程
+			
+			os.Exit结束进程
+		
+
+	
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

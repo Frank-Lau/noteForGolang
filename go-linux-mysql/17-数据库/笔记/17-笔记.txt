@@ -1,0 +1,522 @@
+
+union： 效率较低
+	联合 多条 select 语句成 一条 SQL语句。将结果集纵向联合。
+
+	查询上海的男生和北京的女生：
+
+		select stuname, stuaddress, stusex from stu where stuaddress='上海' and stusex='男'   	union
+
+		select stuname, stuaddress, stusex from stu where stuaddress='北京' and stusex='nv'
+
+	union的注意事项：
+
+		1. union两端的 字段个数必须一致
+
+		2. union两端的 字段名以第一个查询表的字段名为准，
+		
+		3. 语法角度，union两端的 查询的数据类型可以不一样，但是实际使用，建议一致。
+
+		4.其余sql查询中,默认是all,但是union默认是distinct(去重),想要显示所有需要在union关键字后方加all
+
+多表查询：
+	笛卡尔集：
+
+		 笛卡尔全集 行 = t1行 x t2 行
+
+		 笛卡尔全集 列 = t1列 + t2 列。
+
+		笛卡尔全集中包含 错误信息！！！—— 多表查询的主旨工作，滤除错误信息。
+
+		从 emp 和 dept 表中找出正确数据：
+	
+			select * from emp e, dept d  where e.deptno = d.deptno ;
+
+	内连接： inner join 。。。 on
+
+		“,”---> [ inner ] join
+
+		on  ---> where
+
+		查询 stuinfo 表和 stumarks 表  的 姓名、学号、性别、笔试成绩、上机成绩：
+
+		select i.stuno, stuname, stusex, writtenexam, labexam from stuinfo i, stumarks s where i.stuno=s.stuno;
+
+			1. 同名的 公共字段，查询时，要指定表名。(否则报错:Column 'stuno' in field list is ambiguous字段列表中的“stuno”列是不明确的) 
+
+			2. 表名可以使用 别名。
+
+	外链接： 在查询的结果集中，想包含某些对于筛选条件不满足的数据。包含左边表数据——左外链接， 含右边表数据——右外链接。
+
+	左外： left join 。。。on
+
+		查询 stuinfo 表和 stumarks 表 的 姓名、学号、笔试成绩、上机成绩： 要包含 stuinfo 表的所有数据。
+
+		select stuname, i.stuno, writtenexam, labexam  from   stuinfo i left join stumarks s on   i.stuno = s.stuno;
+
+	右外： right join 。。。 on
+
+		查询 stuinfo 表和 stumarks 表 的 姓名、学号、笔试成绩、上机成绩： 要包含 stumarks 表的所有数据。
+
+		select stuname, s.stuno, writtenexam, labexam  from   stuinfo i  right  join  stumarks s  on   i.stuno = s.stuno;
+
+	交叉连接 ： cross join
+
+		如果没有 过滤条件，相当于查询笛卡尔全集。
+
+		如果没有 过滤条件，相当于内连接。
+
+	自然连接：  natural  join、natural left  join、natural right join。
+
+		简化 内连接、外联接的语法。 自动判断 连接条件(匹配同名字段)。
+
+		内连接：
+			select * from stuinfo natural join stumarks;
+
+		左外连接：
+
+			select  stuname, writtenexam, labexam from stuinfo i natural left join stumarks 
+
+		右外连接：
+
+			select  stuname, writtenexam, labexam from stuinfo i natural right join stumarks 
+		
+		总结:	1.如果没有同名字段将返回笛卡尔集
+		
+			2.会对查询结果进行整理
+			
+				1)连接两张表的同名字段只保留一个
+				2)连接字段放在最前面
+
+子查询：
+	SQL语句嵌套使用。
+
+	通常，是子查询放在 （）内部，给主查询提供查询条件。
+
+	常用语法： select  * from 表 where 条件 （ select 。。。 from  子查询 ）
+
+		查找笔试最高分学生信息：
+select *
+from stuinfo
+where stuno=
+(
+		select stuno 
+		from stumarks
+		where writtenexam = 
+		(
+				select max(writtenexam) 
+				from stumarks
+		)
+)	
+
+	in 和 not in：
+
+		子查询结果返回多个集合。使用 in 、not in。
+
+		in：不包含 null
+
+		not in 包含 null 。
+
+		查找笔试成绩及格的同学：
+
+select * from stuinfo
+where stuno in 
+(
+select stuno from stumarks where writtenexam >= 60
+);
+
+	
+		查询没有通过的同学（不及格，缺考）：		
+
+select * from stuinfo
+where stuno not in 
+(
+select stuno from stumarks where writtenexam >= 60
+);
+
+	exists 和  not exists：
+
+		判断 是否存在某个查询结果。
+
+		如果有人笔试超过80分，就显示所有学生信息：
+
+select * 
+from stuinfo
+where EXISTS
+(
+	select * from  stumarks
+	where writtenExam >=90
+);			
+	
+	子查询分类：
+		1. 普通子查询： 子查询返回一个结果， 使用单行操作符接收。 如： “=”
+
+		2. 列子查询： 子查询返回一个列上的多个结果， 使用多行操作符接收。如：in、not in
+
+		3. 行子查询：子查询返回一行上的多个结果。举例：
+
+			查询语文成绩最高的男生和女生
+select * FROM stu
+where (stusex, ch)
+in 
+(
+	select stusex, max(ch)
+	from stu
+	group by stusex
+)	
+
+		4. 表子查询： 将子查询得到的数据集，当成表看到。
+
+		select * from ( select stuno, stuname, stuage, stuaddress from stu ) as t;
+
+			必须！给表起别名。
+
+
+事务： 【重点】  一次性执行多条sql语句,要么都成功,要么都失败
+		关系型数据库用来保护重要数据信息的，管理机制。
+
+		特点是：要么都成功、要么都失败。
+
+		组成： 一个或多个DML、一个DDL、一个DCL。
+
+	事务操作：
+		1. 开启事务：	start transaction； begin
+
+		2. 执行多条SQL语句，修改数据库（insert、update、delete）
+
+		3. 关闭事务： 	commit（提交、关闭）rollback（回滚、关闭）
+		   
+		4.注意:只有在 一条或多条 操作发生错误的情况下执行回滚操作,其余操作才会被撤销,否则,不会撤销
+
+
+			显式：	commit 显示提交。 rollback 显式回滚。
+
+			隐式：	隐式提交： DDL 语句：执行结束会自动做隐式的 commit
+
+					 quit、exit ： 退出数据库之前，会自动做隐式的 commit
+
+				隐式回滚： 掉电、宕机、异常。。。
+
+		注意：innodb 引擎使用事务。myisam不支持事物(和外键一样)
+
+	事务保存点：
+
+		语法： 	savepoint   保存点名。	——设置保存点。
+
+			rollback to 保存点名。	——回滚至保存点。
+
+		使用流程：
+
+			1. 开启事务
+
+			2. 执行 SQL语句
+
+			3. 设置保存点。
+
+			4. 执行 SQL语句
+			。。。
+
+			N： 回滚至保存点  rollback to
+
+			N+1： 关闭事务。commit、rollback
+
+	事务4大特性(ACID)：【重点】
+
+		原子性(全部操作不可再分,要么都成功,要么都失败)、一致性、[ 隔离性(重点,各个事物互不影响,提交之前其他事物不可见) ]、持久性。
+
+	不同事物操作同一张表的不同实体,在提交前互不影响,提交后统一,操作同一实体时,若一方事物未提交,
+
+另一事物无法修改该数据,阻塞等待,待一方事物提交,操作立刻自动执行;
+
+
+
+	mysql事物隔离级别
+		
+		1.读取未提交:    所有事物都可以看到其他事物内未提交的执行结果,伴随 脏读 现象(因为事物可能会发生回滚)
+		
+		2.读取提交内容:	大多数数据库的默认级别,一个事物只能看见已经提交的事物所做的改变,但是在当前事物操作时,其他事物可能会有提交,所以同一个
+
+select语句可能会有不同的返回结果,也就是所谓的不可重复读;
+
+		3.可重读:	这是mysql默认的事物隔离级别,确保同一个事物的多个实例在读取时会看到同样的数据(A事物第一次查询结果为400,B事物讲值修改为
+
+350并提交,但是A第二次读取仍然读取到400,说白了可重复读读的时快照),但是会引发 幻读 ,简单来书,幻读就是当某一用户读取某一个范围的数据时,另一个事物又在该范
+
+围内插入了新的数据,当用户再次读取时,会发现幻影
+
+		4.可串行化:	事务隔离的最高级别,强制事物排序,使之不可能冲突,通过加锁实现,基本上没人用
+
+		5.不可重复读 和 幻读 容易混淆,他们一个针对修改,一个针对插入
+	
+			
+
+视图：	—— 不能提高效率
+
+	视图简介： 不是真实的表，虚拟表结构。 数据实际存储在创建视图用的表中。
+
+	视图作用：
+		1. 筛选可可显示数据组成视图，隐藏表结构
+
+		2. 隐藏表敏感信息
+
+		3. 简化SQL查询语句。
+
+	视图的创建：
+	
+		create view  视图名
+		as 
+		select 语句 				可以是：（多表select、子查询）
+
+	视图的使用：
+
+		与表使用相同。
+
+	视图查看：
+		desc 查看视图结构。
+		show craete view  视图名 		查看视图创建语句。
+
+	显示视图：
+		show tables；
+
+		select table_name from information_schema.views;
+
+		show table status where comment='view';
+
+	删除视图：
+		drop view 视图名。
+
+
+索引：
+	作用： 提高数据检索速度。
+
+	缺点： 	增、删、改 效率低。像字典一样,修改数据后还需要修改索引
+
+		数据库需要额外提供空间存储 索引。
+
+	特性： 只需创建、删除索引，不需维护。MySQL数据库自动维护。
+
+	创建索引：
+		语法： create index [if not exists] 索引名 on  表名（字段名） 
+
+	修改表创建索引： 
+
+		语法：alter table 表名 add index 索引名（字段名）
+
+	创建表时指定索引：
+		
+		语法：create table 表名（  字段名 字段类型，字段名 字段类型，。。。， index 索引名（字段名） ）
+
+	删除索引：
+
+		语法： drop index 索引名 on 表名。
+
+	创建索引的原则：
+		
+		1. 频繁搜索，应该创建
+
+		2. 经常排序，应该创建
+
+		3. 公共字段， 应该创建
+
+		4. 数据量较小的表不需要创建索引(几十万条的数据都是很少,这种情况搜索索引的消耗比逐条搜索的时间还要长)。
+
+		5. 字段的数据值只有几种取值（枚举、集合），不需要创建索引。
+
+预处理:
+	将反复执行多次的 查询语句。 提早编译生成二进制。 节省词法分析、语法分析、编译过程。
+
+	语法：	prepare  预处理名 from '查询语句，可以带有占位符（？）'
+		
+		如果有占位符： set @变量名 = 变量值；
+
+		execute 预处理名 using @变量名
+
+		如果有多个占位符，变量定义的顺序，不能颠倒。
+
+
+Linux 连接mysql数据库：
+
+	1. 下载MySQL驱动 		go get github.com/go-sql-driver/mysql
+
+	2. 启动linux 下 GoLand 工具	/home/itcast/GoLand-2017.3.3/bin/goland.sh   --- 脚本文件
+
+	3. 测试连接linux下mysql 数据库：
+
+		1） 导入 驱动包：
+import (
+   "database/sql"
+   _ "github.com/go-sql-driver/mysql"
+)
+		2） 组织连接数据库的数据信息：
+	
+			DataSource = “用户名：密码@连接方式（IP：port）/数据名”
+
+			DataSource := "root:123456@tcp(127.0.0.1:3306)/mydb2"
+
+		3)   sql.Open() 打开数据库。 得到 *DB ——> struct 
+
+			func Open(driverName, dataSourceName string) (*DB, error) 
+
+			driverName="mysql"
+
+			【重点】：open函数成功返回，不代表数据库连接成功。此函数也不检查 DataSource 正确性。
+
+		4)  真正连接数据库 db.Ping() 
+
+			如果函数调用成功。得到一个成功与数据库建立连接 指针 *DB  ——> 指向数据库
+
+	单行插入、多行插入：
+
+		1.  组织sql语句： sql := `insert into st7 values(1, 'Tom')`  / insert into st7 values(1, 'Tom'), (2, 'Tom'), (3, 'Tom'), (4, 'Tom')
+
+		2.  result = db.Exec(sql)  执行sql语句，得到 result
+
+		3.  result.RowsAffected() 获取sql语句影响的行数。
+
+	预处理：
+
+		1.  stmt = db.prepare(带有占位符的 预处理  非查询 语句)
+
+		2.  stmt.exec(对应站位符的变量)  —— 非查询语句专用
+
+	单行查询：
+
+		1. row = db.QueryRow(返回一条记录的sql语句)
+
+		2. 定义变量接收 返回的数据库数据   var id，name string
+
+		3. 使用 Scan 提取 数据
+
+			row.Scan(&id, &name)
+
+	多行查询：
+
+		1. rows = db.Query(返回多条记录的sql语句)
+
+		2. 根据数据库字段，定义变量接收 返回的数据库数据   var id，name string
+
+		3. for 循环 从 返回的 rows 中提取数据
+
+			使用 rows.next() 取下一条记录
+
+		4. 使用 Scan 提取 数据
+
+			rows.Scan(&id, &name)	
+
+	预处理查询：
+
+		1.  stmt = db.prepare(带有占位符的 预处理 查询 语句)
+
+		2. rows  = stmt.query(占位符对应的数据)	—— 查询语句专用
+	
+		3. 根据数据库字段，定义变量接收 返回的数据库数据   var id，name string
+
+		4. for 循环 从 返回的 rows 中提取数据
+
+			使用 rows.next() 取下一条记录
+
+		5. 使用 Scan 提取 数据
+
+			rows.Scan(&id, &name)
+	
+		
+		
+	
+
+
+
+
+	数据库设计及优化
+	
+		1.数据库设计
+
+			1)分库
+				(1)通过主从实现读写分离(主库写,从库读)
+
+					为什么要这么做呢?首先,网站中读写比大致为 10:1 ,而且一个网站的性能大部分卡在数据库的 写 操作上,放在一起会影响读的效率,所以推荐读写分离,当然了,前提是对数据的实时性要求不高
+
+		2.表设计
+
+			1)分表
+				(1)竖直分
+
+					适用于字段较多,将数据存放在两张不同的表中,常用的放在一张表,不常用的放在另外一张表
+
+				(2)水平分
+
+					背景:
+
+						1>水平拆分最早大家都认为是单表数据量达到2000万行时需要进行水平分表,因为有DBA做过实验,说单表数据达到2000万时,mysql效率急剧下降
+
+						2>后来阿里在<<java开发手册>>里边又提到,当单表数据达到500万或者2G时才推荐水平分,说法并不统一
+
+						3>首先来说说mysql通过什么来加快查询效率的,通过 索引 , mysql为了提高查询效率会将索引加载进内存,那为什么达到一定量级之后效率降低了? 因为内存满了,开始了大量的磁盘操作,导致性能下降,换句话说,你的硬件配置越牛逼,你所能加载的索引也就越多,性能天花板越高,所以这东西没定论,看你的硬件
+
+		3.字段选择
+
+			1)尽量使用 char 来代替 varchar ,char查询和写入的效率高于varchar,char 分配的字段长度即使没用完,也不会回收,造成空间浪费,而varchar由于会回收多余空间,拖慢了效率
+
+			2)尽量将字段设置为 not nul ,设置默认值,这样在查询时数据库将省去是否为null的判断
+			
+			3)对于省份,性别这种数据尽量采用enum的方式存储,因为枚举实际是作为数值进行处理的,效率高
+
+		4.建立索引(数据量较大的场所,因为建立好索引之后就像为一本字典添加了一个目录,查起来方便,但是呢如果往字典中添加一个数据,不管要把新字加进去,还要把目录也改了,效率会受影响)
+		
+			1)使用复合索引
+		
+				(1)建立一个(a,b,c)三个字段所组成的索引,实际上相当于创建了(a),(a,b),(a,b,c)三个索引,使用越频繁的越靠左,索引的  最佳左前缀   特性
+
+			2)防止索引失效
+
+				(2)既然建立了索引,那么就应该防止索引失效,失效场景
+
+					1>索引不要包含有null值的列
+
+						符合索引中只要有一列含有null值,那么这一列对于此复合索引就是无效的
+
+					2>滥用排序
+
+						由于mysql一次查询只能使用一个索引,如果where子句使用了索引,那么order by中的列将不会使用索引,索引在默认 升序 排列满足要求的情况下就不要手残顺手加一个排序了
+
+					3>慎用like
+
+						like会导致全表扫描,如果非用不可,尽量不要用 like "%a%"这种,a前后各加一个百分号,这样索引就彻底失效了,尽量用 like "a%"这种
+
+					4>慎用 NOT IN 和 <> 
+
+						二者都会导致全表扫描
+
+						NOT IN 可以用 NOT EXISTS代替
+
+						<> 可以用 or 来代替 (id<>3则可使用id>3 or id<3来代替)
+
+					5>慎用计算函数
+
+						假设要查询 创建时间 在 2020年之前的数据,可以用YEAR函数将创建时间的年份提取出来(select * from users where YEAR(adddate)<2007;)这样也会导致索引失效,
+
+						可以用 创建时间<'2020-01-01'这种方式来替代
+
+		 
+
+					
+		5.总结:
+
+			其实数据库优化总体围绕着一点进行: 空间换时间  向char和varchar,包括第三范式中要求消除传递依赖,语文,数学,英语三门成绩都有了,那高考时候我第一个看的肯定是总分而不是单独的分数,用三门课程分数相加显然效率太低,所以应该存一个总分字段,尽管它会消耗一定的空间
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	

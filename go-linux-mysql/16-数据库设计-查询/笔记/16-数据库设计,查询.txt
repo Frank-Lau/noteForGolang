@@ -1,0 +1,311 @@
+数据库基本概念：
+
+	行： 记录、实体
+
+	列： 字段、域、属性
+
+	表关系： 两张或两张以上表之间的约束
+
+	数据冗余：相同数据存储不同位置。
+
+		解决方法： 分表。 —— 缺陷：查询效率低。
+
+	数据完整性： 正确性 + 准确性：
+		
+		正确性：数据类型正确。
+
+		准确性： 数据范围准确。
+
+实体间关系:
+
+	一对多：
+		主表的主键和从表的非主键之间建立关系。
+
+		一对多，与多对一一样。 主从表定位差异。
+
+		举例： 班级表——学生表，  人物——身份，  学生——课程
+
+	一对一：
+
+		主表的主键和从表的主键之间建立关系。
+
+		根据实际数据使用频率，通常将表分为“常用信息表”和“不常用信息表”—— 垂直分割。
+
+		举例： 学生表——身份信息， IP——主机
+
+	多对多：
+		非主键和非主键之间的对应关系。【错！】
+
+		一张表中的记录对应另一张表多条记录。另一表一条记录对应多条件。
+
+		实现多对多，创建第三张表，描述表关系。
+
+		举例：产品——厂商， 明星——粉丝，电影院——电影
+
+数据库设计步骤：
+
+	1. 需求分析，双方相关人员 座谈、交流。提取数据库所要标识的信息。
+
+	2. 建模：标识 实体对象。
+
+	3. 建模：标识 实体属性。
+
+	4. 建模：找寻对象之间的关系，绘制 E-R 图
+
+	5. 将建好的模型，转换为数据库
+
+	6. 规范化。
+
+绘制E-R图：
+	
+	作用：描述实体和实体之间的关系。 （方便技术人员和非技术人员交流。）
+
+	语法： 	矩形：实体
+
+		椭圆：属性
+
+		菱形：关系
+
+	转换成数据库：
+
+		1.  实体转成表。属性转成字段。
+
+		2.  没有合适的字段做主键，添加一个自动增长列做主键。
+
+数据库规范化：
+
+	第一范式：保证字段为原子单元（不可再分）
+
+		 字段是否应该再分，取决于实际需求。不能一概而论。(中国辽宁沈阳,可以单独拆分出  国家 省 市,但是如果不统计某个省/某个市 人数时
+
+								拆分反而不好)
+
+	第二范式：非建字段必须依赖于键字段。   一张表只描述一件事。
+
+		
+	第三范式：消除传递依赖。  一张表中不要出现冗余信息。(一直单门成绩,相加就可以求出总成绩,就没必要存储总成绩,但是高考成绩在公布时
+
+							访问量骤然增加,提取单门成绩相加得出总成绩显然性能不理想)
+
+		注意:	当性能和规范化冲突，首先性能。范式越高,表越多,查询效率越低.
+
+
+SQL查询语句：
+
+	1. 字段表达式：
+	
+		在查询语句中添加 数学表达式：
+		
+			select '窗前明月光'；
+
+			select 10*45;
+
+		别名：	as  “别名”或  '别名'    	as 和 引号 可以省略
+
+			select id as "编号",name as '姓名', `add` 地址 from teacher;
+
+	2. from 和 dual表
+
+		from： 指定数据来源。通常是表名。当查询语句没有使用表数据时，可以省略。
+
+		dual： 伪表。凑sql语法。
+
+	3. 如何在 linux 的MySQL中导入脚本文件：
+
+		1. 登录 MySQL数据库
+
+		2. 在mysql>提示符后，使用 “source 脚本文件绝对路径” 执行。快速借助脚本创建表及表数据。
+
+	4. where：
+
+		从数据集中，按过滤条件筛选数据返回给查询者。
+
+		支持的 运算符：> < >= <= = (没有 ==) !=  and  or  not
+
+		查询 男性记录：
+
+		 	select * from stu where stusex='男';
+
+		查询 北京、上海学员：
+
+			select * from stu where stuaddress='北京' or stuaddress='上海';
+
+	5. in 和 not in：
+
+		在或不在集合中。
+
+		查询 北京、上海学员：
+
+			select * from stu where stuaddress in ('北京' ,'上海');		# 北京、上海的学员	
+			
+			select * from stu where stuaddress not in ('北京' ,'上海');	# 不是 北京、上海的学员	
+
+	6.  between and | not between and
+
+		查找指定范围内的数据。
+
+		查找年龄在18~25之间的学生：
+
+			select * from stu where stuage >=18 and stuage <=25;
+
+			select * from stu where stuage  between 18 and 25;
+
+		查找年龄 不 在18~25之间的学生：
+
+			select * from stu where stuage not  between 18 and 25;
+
+			select * from stu where stuage <18 or stuage >25;
+
+			select * from stu where  not (stuage >=18 and stuage <=25);
+
+	7. is null 和 is not null
+
+		当字段值包含空值时，不能使用 = 和 != 判断空值。
+
+		使用 “is null” 和 “is not null”替代 = 和 !=
+
+		查找缺考的学生：
+
+			select * from stu where ch is null or math is null；
+
+		查找没有缺考的学生：
+
+			select * from stu where ch is not null or math is not null；
+
+	8. 通配符： 
+
+		_: 匹配任意 一个 字符。
+
+		%：匹配 任意 N 个字符。（0-N）
+
+	9. 模糊查询：
+
+		使用 like 关键字和 通配符，进行筛选。
+
+		查找姓张的同学：
+
+			select * from stu where stuname like '张%'；
+
+		查询变量名中包含 char 的信息。
+
+			show variables like 'char%'
+
+	10. order by 排序：
+
+		asc：升序（默认）
+
+		desc：降序
+
+		1. order by 作用于后面的 所有列。
+		
+		2. asc、desc： 作用于 前面的  1 列。
+
+		单列排序：语文成绩降序排列
+
+			select * from stu order by ch desc;
+
+		多列排序：按年龄升序, 成绩降序：
+
+			select *, (ch+math) as "成绩" from stu order by stuage, (ch+math) desc；
+
+			select *, (ch+math) as "成绩" from stu order by stuage, 成绩 desc；
+			
+
+	11.组函数	当组函数遇到null的时候会跳过不统计
+		单行函数：多数据库表中的一行进行变换，产生一个结果。
+
+		多行函数：多数据库表中的多行进行变换，产生一个结果。
+
+		组函数：多行函数：聚合函数
+
+			1. sum()		求和
+			2. avg()		求平均值
+			3. max()		求最大值
+			4. min()		求最小值
+			5. count()		求记录数， 不能统计带有 null 值的字段。最好采用主键字段(填充*自动按主键查找)
+
+		select sum(ch) 语文总分, avg(math) 数学平均分, max(ch) 语文最高分, min(math) 数学最低分, count(stuno) 总人 数, count(*) 总数, count(ch) 代空值  from stu;
+
+	
+	12 group by 分组： 【重点】
+
+		语法：【重点】：select 查询语句中 ，所有没有出现在 组函数中的 字段，都必须包含在 group by 之后。
+
+		group by 作用于 之后的 所有列。
+
+		按性别分组，显示每组的平均年龄：
+
+			select stusex, avg(stuage) from stu group by stusex;
+
+		求各个地区，男性平均年龄 和 女性平均年龄:
+
+			select  stusex, stuaddress, avg(stuage) from stu group by stuaddress, stusex;
+
+		group_concat()函数：
+
+			将分组中的所有数据值，拼接成一条数据。
+
+	13：having：对分组数据进行过滤。 操作的对象： 查询后的结果集。
+
+		having 和 where 区别：
+
+			1. where 直接对数据库表进行过滤。 having 对 查询后的结果集进行过滤。
+
+			2. 不能在 where 子句中使用组函数。 可以在 having 子句中使用组函数。(sql语句中可以包含组函数,但是不能以组函数的结果
+
+		做条件筛分  eg:	where avg(stuage) > 25 是错误的
+
+			3. where 效率高一些
+
+				—— 没有组函数，whrere 和 having 效果一致。
+
+		查询平均年龄大于 25 的地区：
+
+			select avg(stuage) 年龄, stuaddress 地区 from stu group by stuaddress having avg(stuage) > 25;  —— 成功
+
+			select avg(stuage) 年龄, stuaddress 地区 from stu where avg(stuage) > 25 group by stuaddress;  —— 失败
+
+	14 limit：
+
+		语法： limit  起始坐标位置，长度 。   起始坐标位置省略，相当于从 0 开始。
+
+		从3的位置开始，取4条数据
+
+			select * from stu limit 3,4; 
+
+		找出班级总分前三名：
+
+			select (ch+math) 总分 from stu order by 总分 desc limit 3；
+
+		limit 也适用于 update 和 delete
+
+	15 去重：
+
+		distinct： 去重重复项,只作用于后面的一列。
+	
+		all： 显示所有项（默认）
+		
+		select distinct stuaddress from stu;
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+

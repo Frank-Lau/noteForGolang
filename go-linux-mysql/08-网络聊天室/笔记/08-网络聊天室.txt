@@ -1,0 +1,162 @@
+
+模块划分：
+
+        主go程：
+
+	创建监听，创建 Manager go程 ， 等待客户端请求，建立连接，创建 handerConnet go程
+
+        各个用户 handerConnet go程
+
+	组织用户结构体，存入全局 map ， 
+
+	组织用户登录消息。写入 全局channel中
+
+	组织用后聊天信息。写入 全局channel中
+
+	查看在线用户列表。
+
+	修改用户名。
+
+	退出。
+
+	超时处理用户。
+
+        管理者go程  Manager
+
+	初始化全局 map
+
+	循环 监听 全局 channel 中的数据
+
+	将读到的内容，写给 每个用户自己带的 channel
+
+        各个用户读取数据的go程  WriteMsgToClinet ：
+
+	循环从每个 用户自带的 channel 中读取数据。
+
+	读到数据，写给对应用户。
+
+        全局模块：
+
+	type Client struct {
+		Name string
+		Addr string
+		C chan string
+	}
+
+	全局 channel ----  Message
+
+	全局 Map  ---- onLine ：  key：IP+port  value：client
+
+广播用户上线：
+
+	1. 创建监听socket    net.Listen  ---- listener
+
+	2. 循环监听客户端 连接请求  listener.Accept()	----- conn
+
+	3. 在 循环监听客户端连接请求前， 创建 Manager go程。
+		
+		1）.  创建client 用户结构体类型 Client { Name，Addr，C }
+
+		2）.  创建全局在线用户列表  onLineMap[string]Client
+
+		3)  .  创建全局 channel 。 ---- message
+
+		4）.  初始化 onLineMap
+
+		5）.  for 循环 从全局 channel 中读取数据（无——阻塞）
+
+		6）.  遍历在线用户列表 onLineMap， 将读到的数据 写给每一个用户的 channel --- C
+
+	4. 针对每一个成功建立连接的客户端，创建 go 程  ---- HanderConnet（conn）并实现
+
+	5. 组织用户结构体信息。 conn.RemoteAddr() —— 客户端IP+port ——> Name/Addr  。 存入在线用户列表 onLineMap
+
+	6. 创建 读取用户自带 channel 的go程。 WriteMsgToClient(conn, client)
+
+		1)  for 循环 读取 channel 上的 数据，（无——阻塞，有——解除阻塞）
+
+		2）将读到的数据 使用 conn 写给客户端。
+
+	7. 组织 用户上线消息。 写给 全局 channel	———— 相当于，完成“广播”
+
+	8. 在 HanderConnet 结尾处，添加 死循环 ，防止提取结束。
+
+广播用聊天内容：
+
+	1. 创建 MakeMsg（client, str）函数, 组织待写入全局channel的 消息内容（用户上线、用户聊天）
+
+	2. 在  HanderConnet 中 ，用户广播上线完成后，创建 匿名 go程，读取客户端发送数据内容。
+
+	3. for  conn.read  读取 客户端发送数据。
+
+	4. n == 0 ——> 客户端 close() ;    err != nil && err != io.EOF ——> 读取异常
+
+	5. 利用 MakeMsg 组织“聊天内容”， 写入全局channel 中 ——— 相当于，完成“广播”
+
+查询在线用户列表：
+
+	1. read到客户端发送来的数据，进行筛选判断是否是 “who”命令
+
+	2. 遍历 onlineMap 提取在线用户信息。使用 MakeMsg 组织在线用户消息。
+
+	3. 写给当前查询用户。 conn.write() —— 不广播。
+
+给当前用户改名：
+
+	1. read到客户端发送来的数据，进行筛选判断是否是 “rename|”命令。   并且长度 > 7
+
+	2. 使用 split 函数，拆分 新用户名。 
+
+	3. 将新用户名替换掉原有用户结构体的Name成员。——相当于有了 新用户结构体
+
+	4. 将新用户结构体 作为 value ， 覆盖onLineMap中原用户结构体
+
+	5. 提示用户改名成功  conn.write() —— 不广播。
+
+退出用户：
+
+	1. 在匿名go程产生之前创建 协调 匿名go程 和 HanderConnet 退出的 channel —— isQuit  切记: 并发时千万要记住回收内存,A go程创建B go程,A go程退出后,B go程仍然继续工作(通过range来便利channel,当channel关闭后,循环直接终止,那么在range后面加一个Goexit就可以把go程干掉了)
+
+	2. 在匿名go程  n == 0 时， isQuit <- true
+
+	3. 在HanderConnet 结尾处  创建 for  select 监听  <-isQuit  ——  替换掉原有测试的死循环。
+
+	4. 满足监听条件。 从在线用户列表中，删除当前用户。  delete(onLineMap, clit)
+
+	5. 组织用户下线消息，广播给所有在线用户。MakeMsg   。 写给 全局 channel	———— 相当于，完成“广播”
+
+	6. 关闭用户自带 channel。迫使WriteMsgToClient go程 结束 range 循环，主动退出
+	
+		切记: 并发时千万要记住回收内存,A go程创建B go程,A go程退出后,B go程仍然继续工作                                                                                                                                                                                                                   
+
+
+超时踢出：
+
+	1.  在 select 中添加 case分支 监听 <-time.After(). 满足读条件， 后续动作与上述退出一致。
+
+	2.  创建一个证实用户是 活跃用户的channel  —— isLife
+
+	3.  在 select 中添加 case分支 监听 <-isLife。 监听到以后什么都不做，目的是重置计时器。
+
+	4.  在匿名go程 每次 for 结尾处，添加  isLife 的写。
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

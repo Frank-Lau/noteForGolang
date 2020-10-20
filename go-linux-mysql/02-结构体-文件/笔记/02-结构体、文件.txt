@@ -1,0 +1,349 @@
+
+结构体：
+	结构体【类型】 —— int/bool/string/byte...  地位等同,弥补了切片和数组不能存储不同数据类型的不足
+
+	type Person struct {
+	        name string
+	        age int
+	        sex byte
+	}
+
+普通结构体变量
+
+	初始化
+		1. 顺序初始化
+
+			p2 := Person{"andy", 'f', 100}
+
+		2. 指定成员初始化
+
+			p3 := Person{name:"lucy", age:30}
+	索引成员变量：
+
+		使用“.”号索引
+
+	结构体变量的地址 == 结构体首元素地址。
+
+	比较、赋值。
+
+		结构体之间比较 只能  == 和 != 不能使用 > >= < <=
+
+		相同类型（成员个数、类型、顺序）的结构体变量之间，可以赋值。
+
+	结构体变量传参： —— 值传递。 将结构体变量的大小完全拷贝一份，作为实参赋值给形参。
+
+		【不推荐】
+
+		unsafe.Sizeof(变量名) —— 求取指定变量占用的存储空间大小。
+
+		结构体对齐:结构体总体大小大约等于所有成员占内存大小之和,大小取内存最大成员的整数倍
+
+		例如name 16, age 8,sex 1,总体大小为16 	
+
+结构体指针变量
+
+	初始化
+		1. 顺序初始化
+
+			p2 := &Person2{18, "abc", 'f'}
+
+		2. 指定成员初始化
+
+			p3 := &Person2{sex:'m', name:"xyz"}
+
+		4. 使用 new 初始化内存空间	
+
+			var p4 *Person2
+			p4 = new(Person2)		// 给指针开辟内存空间
+	索引成员变量：
+
+		go语言，结构体指针 使用“.”号索引			
+
+	结构体指针变量的值 == 结构体首元素地址。
+
+	结构体指针传参：
+
+		【推荐使用】 
+
+		原因：指针的大小，与指针数据类型 无关！ 只与当前操作系统有关。32位 -- 4、 64 -- 8
+
+		var p1 *int		---> unsafe.Sizeof(p1) 
+
+		var p2 *byte	---> unsafe.Sizeof(p2) 
+
+		var p3 *Person	---> unsafe.Sizeof(p3) 
+
+----------------------------------
+Contains：
+	在 字符串中找 子串 		--> bool
+
+	strings.Contains("hello", "lllo")
+
+Join:
+	将 []string 中的每一个元素，按照指定字符串 拼接。 	--> string
+
+	str := []string{"hello", "go", "haha", "xixi"}
+	retStr := strings.Join(str, "%")
+
+Trim：
+	取出字符串“首”、“尾”的字符。
+
+	retStr = strings.Trim(" hello ", " ")
+
+Replace：
+	将字符串中的指定 子串，替换为指定 子串。  --> string
+
+	myStr := "this is a test for a Replace"
+	retStr = strings.Replace(myStr, "a ", "some ", -1)	
+
+Split：
+
+	将字符串按照指定子串拆分 	--> []string
+
+	str = strings.Split(myStr, "a ")
+	for _, word := range str {
+		fmt.Println(word)
+	}
+
+Fields：
+	将字符串按照“空格”拆分	--> []string
+
+	str = strings.Fields(myStr)
+	for _, word := range str {
+		fmt.Println(word)
+	}
+HasSuffix：
+
+	判断字符串是否已“xxx”结尾	--> bool
+
+	strings.HasSuffix("word cup.jpg", ".mp3")
+
+HasPrefix：
+
+	判断字符串是否已“xxx”开头	--> bool
+
+	strings.HasPrefix("hello world", "hel")
+
+-------------------------------------
+
+create：
+	创建文件。 文件已经存在，清空原文件内容。
+		
+		文件不存在。创建、打开文件。 0666
+
+	相对路径： 以当前程序工作目录，找寻创建文件位置。
+
+		“.”当前工作目录。./可省    “..”上一级工作目录。
+
+	绝对路径： win：从盘符计算访问路径 	C:/itcast/test2.txt
+
+		Linux: 从“根目录”访问路径 	/home/itcast/test2.txt
+	
+open：
+	打开已有文件。 文件已经存在，打开。
+
+		文件不存在。报错。
+
+		不能对该文件进行写操作。
+
+OpenFile：
+
+	指定读写模式，打开文件。 
+
+	func OpenFile(name string, flag int, perm uint32) 
+
+	参1：访问路径：绝对、相对
+
+	参2：打开文件的 读写权限： os.O_RDONLY  os.O_WRONLY   os.O_RDWR 		 | os.O_CREATE (创建文件)
+
+	参3：文件访问权限。  通常 --- 0666
+
+写文件：
+	1. 按字符串写入：
+
+		func (file *File) WriteString(s string) (ret int, err Error)
+
+			参：待写入字符串
+
+			返：实际写出的字节数。
+	2. 设置文件读写位置：
+
+		func (f *File) Seek(offset int64, whence int) (ret int64, err error) 
+
+			参1：偏移量 （矢量：正-向后、负-向前）
+		
+			参2：偏移起始位置：
+
+				io.SeekStart : 从文件开头
+
+				io.SeekCurrent : 从文件当前位置
+
+				io.SeekEnd : 从文件结尾
+
+			返：从文件起始位置到当前读写指针位置的 偏移字节数。
+	3. 按位置写：
+
+		func (file *File) WriteAt(b []byte, off int64) (n int, err Error)
+
+			参1：待写入的数据内容
+
+			参2：Seek函数的返回值。
+
+			返：实际写出的字节数。
+按行读文件：
+
+	1.  创建带有缓冲区的 reader 
+
+		func NewReader(rd io.Reader) *Reader	——  bufio包 内的函数
+
+			参：open、OpenFile 返回值
+
+			返：带有缓冲区的 reader 
+
+	注:为什么说是带有缓冲区的reader,因为返回值为Reader的指针,Reader为结构体,机构体中包含[]byte类型的 buf
+
+	2.  从 reader 的缓冲区中，按指定字符读文件。（'\n'表按行）
+
+		func (b *Reader) ReadBytes(delim byte) ([]byte, error)
+
+			参：'\n'
+
+			返：读到的数据内容。 
+
+		一次该函数调用。读一行数据。通常置于循环内。   err == io.EOF 结束循环。
+
+	windows下换行\r\n,linux下为\n,不管是windows下还是llinux下都有\n,所以按照\n作为换行标记
+
+	返回值本身就是[]byte,相当于自动创建了一个buf,故不用像按字节读取那样手动创建缓冲区(buf:=make([]byte,4096)
+
+按字节读、写文件：
+
+	func (file *File) Read(b []byte) (n int, err Error)
+
+		参：缓冲区。 用于存储读到的 数据内容
+
+		返：实际读到的字节数。 
+
+	func (file *File) Write(b []byte) (n int, err Error)
+
+		参：缓冲区。 用于存储即将写出的文件内容。
+
+		返：实际写出的字节数。 
+
+	练习：大文件拷贝。	【 重点！务必能独立完成编写！】
+
+		1. open 源文件。 --- f_r
+
+		2. Create 目标文件。 --- f_w
+
+		3. 创建缓冲区  buf ：= make（[]byte, 4096）
+
+			缓冲区:欲读入,缓输出  
+
+				读:想从磁盘中读一个字节的文件,操作系统并不是只拿出一个字节,而是尽可能多的将内容读进缓冲区(buf内核缓冲)
+
+			    然后从内核缓冲读到用户缓冲
+
+				写:用户缓冲(无论是自己创建的缓冲还是自带的缓冲都属于用户缓冲)先把文件写入内核缓冲,再从内核缓冲刷新到磁盘的扇区上,但是由于磁盘操作耗时太多,所以不能频繁
+
+			    操作,应当在填满一个缓冲区时在刷新到磁盘中,缓冲区大小默认为4096字节,及时写的很小,翻译到内核缓冲时仍然默认为
+
+			    4096字节,所以干脆写成4096
+
+		4. for 从源文件中读取数据存入缓冲区。 
+
+		5. 直接将读到的数据写给 目标文件。 （读多少、写多少）
+
+		6. 判断结束位置，结束循环。关闭读写。  err == io.EOF
+
+	扇区最小单位为512字节(B),哪怕是 1 B 或者更小的文件,占用的都是512B,因为最小的单位已经无法再分
+
+	因为磁盘读取和写入为机械式,比较耗时,尽可能在一次硬盘访问过程中尽可能多的操作数据
+
+	
+
+-------------------------------------
+
+目录操作：
+
+	目录本质也是一个"文件"！读到的目录文件内容 是一个“目录项”
+
+	打开、读、关闭。
+
+	1. OpenFile
+
+		func OpenFile(name string, flag int, perm FileMode) (*File, error) 	打开目录文件
+
+		参1：目录文件的访问路径：绝对、相对
+
+		参2：打开目录权限： os.O_RDONLY （只读）
+
+		参3：os.ModeDir
+
+	2. readdir
+
+		func (f *File) Readdir(n int) ([]FileInfo, error)
+
+			参：读取目录项的 数量。 -1 全部
+
+			返回：[]FileInfo 目录项 切片。
+
+		一次调用即可。不需要循环。
+
+type FileInfo interface {
+   Name() string       文件名称
+   Size() int64        文件大小
+   。。。
+   IsDir() bool        判断是否为 目录文件
+   。。。
+}
+	练习2：
+
+	练习3：
+		1.  打开目录文件 OpenFile（os.ModeDir）
+
+		2.  读取目录项  Readdir(-1)	——> .Name()  找寻 .txt
+
+		3.  拼接  .txt 文件绝对访问路径 。for 循环着 open(O_RDONLY) 每一个 txt
+
+		4.  按行读文件。 1） bufio.NewReader 创建一个自带缓冲区的Reader   2） reader.ReadBytes('\n')  读取一行。  置于for 中
+
+		5.  strings.Fields() 拆分读到的一行数据， 得到各个单词。
+
+		6.  循环统计 “love”单词出现的次数。
+				
+
+			
+
+	
+
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

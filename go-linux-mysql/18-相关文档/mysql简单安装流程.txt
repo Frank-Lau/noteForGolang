@@ -1,0 +1,27 @@
+第一步  sudo apt install mysql-server  安装mysql
+
+第二步 sudo cat /etc/mysql/debian.cnf  管理员权限打开mysql进行修改
+
+输入后会显示
+[client]
+host     = localhost
+user     = debian-sys-maint
+password = hmpw2palVoUA4jZp
+socket   = /var/run/mysqld/mysqld.sock
+[mysql_upgrade]
+host     = localhost
+user     = debian-sys-maint
+password = hmpw2palVoUA4jZp
+socket   = /var/run/mysqld/mysqld.sock
+这里的password就是你的默认密码，在第三步就是用你的默认密码登陆mysql
+
+第三步  mysql -udebian-sys-maint -p"默认密码"    登陆
+
+第四步 update mysql.user ser set authentication_string=password('你要改的密码') where user='你要改的用户名'; 
+（如果运行这步不成功就在这句话前面加sudo）
+
+第五步 flush privileges;  立刻生效修改的设置
+
+第六步 quit   退出mysql
+
+第七步 sudo mysql -uroot -p 重新登陆mysql密码就是你刚才改的密码

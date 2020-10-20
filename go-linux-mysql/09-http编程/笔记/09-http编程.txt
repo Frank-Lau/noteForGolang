@@ -1,0 +1,153 @@
+
+BS模型访问基础：
+
+	DNS服务器： 提供 网站域名，对应的 IP地址（公网IP）
+
+	客户端访问服务器步骤：
+
+		1. 访问DNS服务器， 获取域名对应的 IP
+
+		2. 访问 IP 对应的 web服务器 （http服务器）。
+
+		服务器：	硬件：运行着能够给访问终端提供访问需求的程序的硬件设备。
+
+			软件：服务器程序。
+
+	http： 超文本传输协议。明文
+
+	https：加密超文本传输协议。（TSL、SSL）
+
+	URL：统一资源定位符 （网络地址栏） 在网络环境中唯一确定一个文件访问路径。
+
+http请求协议格式：【重点】
+
+	1. 请求行：方法“空格”访问路径“空格”协议版本号 \r\n 	GET /test.html Http/1.1
+
+	2. 请求头部：都是  key：value 格式			Host：127.0.0.1:8000
+
+	3. 空行：\r\n ( 标志http请求头部结束 )
+
+	4. 请求包体： POST 方法具有包体内容。 通常 GET 方法没有包体。
+
+http应答协议格式：【重点】
+
+	1. 应答行：协议版本号“空格”状态码“空格”状态描述	HTTP/1.1 200 OK
+							HTTP/1.1 404 not found
+	2. 应答头部：key-value
+
+	3. 空行： \r\n
+
+	4. 应答包体：成功：访问的文件内容。失败：错误描述  —————— 不为空
+
+回调函数：
+
+	本质：函数指针。   函数名 —— 地址值 —— 函数中第一条指令的地址值。
+
+	用户自己定义一个函数，不直接调用，当满足某条件时，由其他函数调用，或者由系统自动调用。
+
+	// 定义函数指针【类型】. 指向一类函数：有两个参数（int,bool）有一个int返回值。
+
+	type FUNCP func(x int, y bool) int
+
+http服务器：  net.http 包
+
+	1. 注册回调函数
+
+		func HandleFunc(pattern string, handler func(ResponseWriter, *Request))
+
+		参1： 服务器提供给浏览器访问的 请求路径。
+
+		参2： 回调函数。 当浏览器请求到来时，会被系统自动调用。
+
+	2. 实现回调：
+
+		func handler（w http.ResponseWriter,  r *http.Request）{
+			w: 回写给浏览器的 数据
+			r：从浏览器读取的 数据
+		}
+
+	3. 绑定监听地址。
+
+		func ListenAndServe(addr string, handler Handler) 
+
+		参1：IP+port
+
+		参2：nil （促使系统使用默认的 回调函数）
+
+WEB服务器练习：
+
+	测试注意：
+
+	1. 放置一个 favicon.ico 图标文件到 服务器提供的目录下。
+
+	2. URL 如果测试中文，需要编码、解码。 测试时文件名使用英文和数字
+
+	3. html基本语法，如下：
+<html>
+
+    <head>
+        <title> 404 not found </title>
+    </head>
+
+    <body bgcolor=\"#CCFFAA\">
+        <h4>
+            404 NOT FOUND
+        </h4>
+        <hr>
+         你所请求的文件不存在！！！不好意思！
+    </body>
+
+</html>
+
+-----------------------------------------------
+
+http客户端：net/http
+
+	func Get(url string) (resp *Response, err error) 
+
+		参： 服务器的访问路径  ，必须包含 http://  IP+port   请求文件路径
+
+		返回： resp 结构体。
+
+type Response struct {
+   Status     string // e.g. "200 OK"		---- 状态
+   StatusCode int    // e.g.  200			---- 状态码
+   Proto      string // e.g. "HTTP/1.0"
+   ……
+   Header Header				---- 应答头部
+   Body io.ReadCloser			---- 响应包体 地址。
+   ……
+}
+		defer resp.Body.Close();
+		
+		resp.Body.Read ——> 读取包体的数据。
+		
+
+
+		
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
